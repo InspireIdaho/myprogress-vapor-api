@@ -1,5 +1,5 @@
 import Vapor
-import FluentSQLite
+import FluentMySQL
 
 final class Progress: Codable {
     var id: Int?
@@ -13,6 +13,6 @@ final class Progress: Codable {
     }
 }
 
-extension Progress: SQLiteModel {}
+extension Progress: MySQLModel {}
 extension Progress: Migration {}
 extension Progress: Content {}

@@ -1,10 +1,14 @@
-import FluentSQLite
+import FluentMySQL
 import Vapor
+import Leaf
 
 /// Called before your application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
     /// Register providers first
-    try services.register(FluentSQLiteProvider())
+    try services.register(LeafProvider())
+    try services.register(FluentMySQLProvider())
+
+    config.prefer(LeafRenderer.self, for: ViewRenderer.self)
 
     /// Register routes to the router
     let router = EngineRouter.default()
@@ -17,17 +21,22 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
 
-    // Configure a SQLite database
-    let sqlite = try SQLiteDatabase(storage: .memory)
+    // Configure a MySQL database
+    let mysqlConfig = MySQLDatabaseConfig(hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
+                                          port: 3306,
+                                          username: Environment.get("DATABASE_USER") ?? "vapor",
+                                          password: Environment.get("DATABASE_PASSWORD") ?? "vapor",
+                                          database: Environment.get("DATABASE_DB") ?? "inspire_idaho")
 
     /// Register the configured SQLite database to the database config.
     var databases = DatabasesConfig()
-    databases.add(database: sqlite, as: .sqlite)
+    let database = MySQLDatabase(config: mysqlConfig)
+    databases.add(database: database, as: .mysql)
     services.register(databases)
 
     /// Configure migrations
     var migrations = MigrationConfig()
-    migrations.add(model: Progress.self, database: .sqlite)
+    migrations.add(model: Progress.self, database: .mysql)
     services.register(migrations)
 
 }
