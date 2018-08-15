@@ -12,6 +12,8 @@ final class ProgressController: RouteCollection {
         progressRoutes.get(Progress.parameter, use: find)
         progressRoutes.put(Progress.parameter, use: update)
         progressRoutes.delete(Progress.parameter, use: delete)
+        
+        progressRoutes.get(Progress.parameter, "creator", use: getCreator)
     }
     
     func index(_ req: Request) throws -> Future<[Progress]>  {
@@ -33,8 +35,7 @@ final class ProgressController: RouteCollection {
             req.parameters.next(Progress.self),
             req.content.decode(Progress.self)) {
                 targetProgress, sourceProgress in
-                targetProgress.indexPath = sourceProgress.indexPath
-                targetProgress.completedOn = sourceProgress.completedOn
+                targetProgress.patch(from: sourceProgress)
                 return targetProgress.save(on: req)
         }
     }
@@ -46,5 +47,11 @@ final class ProgressController: RouteCollection {
             .transform(to: HTTPStatus.noContent)
     }
 
-
+    func getCreator(_ req: Request) throws -> Future<User> {
+        return try req.parameters
+            .next(Progress.self)
+            .flatMap(to: User.self) { progress in
+                return progress.creator.get(on: req)
+        }
+    }
 }
