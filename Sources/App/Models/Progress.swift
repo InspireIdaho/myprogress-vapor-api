@@ -31,6 +31,19 @@ extension Progress {
     }
 }
 extension Progress: MySQLModel {}
-extension Progress: Migration {}
 extension Progress: Content {}
 extension Progress: Parameter {}
+
+extension Progress: Migration {
+    
+    static func prepare(on connection: MySQLConnection) -> Future<Void> {
+        return Database.create(self, on: connection) { builder in
+            
+            // default behavior,
+            try addProperties(to: builder)
+            
+            builder.reference (from: \.creatorID, to: \User.id)
+        }
+    }
+}
+
