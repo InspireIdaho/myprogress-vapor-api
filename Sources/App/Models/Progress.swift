@@ -16,3 +16,4 @@ final class Progress: Codable {
 extension Progress: MySQLModel {}
 extension Progress: Migration {}
 extension Progress: Content {}
+extension Progress: Parameter {}
