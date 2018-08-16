@@ -1,0 +1,32 @@
+#set("content") {
+        #// 1
+        <h1>Progress Nodes</h1>
+        
+        #// 2
+        #if(progressNodes) {
+        #// 3
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>IndexPath</th>
+                    <th>Completed Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                #// 4
+                #for(node in progressNodes) {
+                <tr>
+                    #// 5
+                    <td>#(node.indexPath)</td>
+                    <td>#(node.completedOn)</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        #// 6
+        } else {
+        <h2>There aren’t any nodes yet!</h2>
+        }
+}
+
+#embed("base")
