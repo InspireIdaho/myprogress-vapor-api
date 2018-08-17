@@ -1,5 +1,6 @@
 import Vapor
 import FluentMySQL
+import Crypto
 
 final class UserController: RouteCollection {
     
@@ -16,17 +17,18 @@ final class UserController: RouteCollection {
         userRoutes.get(User.parameter, "progress", use: progressList)
     }
     
-    func index(_ req: Request) throws -> Future<[User]>  {
-        return User.query(on: req).all()
+    func index(_ req: Request) throws -> Future<[User.Public]>  {
+        return User.query(on: req).decode(data: User.Public.self) .all()
     }
 
-    func find(_ req: Request) throws -> Future<User>  {
-        return try req.parameters.next(User.self)
+    func find(_ req: Request) throws -> Future<User.Public>  {
+        return try req.parameters.next(User.self).convertToPublic()
     }
 
     // use helper form of POST, pre-creates target model instance
-    func create(_ req: Request, user: User) throws -> Future<User>  {
-        return user.save(on: req)
+    func create(_ req: Request, user: User) throws -> Future<User.Public>  {
+        user.password = try BCrypt.hash(user.password)
+        return user.save(on: req).convertToPublic()
     }
 
     func progressList(_ req: Request) throws -> Future<[Progress]> {

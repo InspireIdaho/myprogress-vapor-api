@@ -1,12 +1,14 @@
 import FluentMySQL
 import Vapor
 import Leaf
+import Authentication
 
 /// Called before your application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
     /// Register providers first
     try services.register(LeafProvider())
     try services.register(FluentMySQLProvider())
+    try services.register(AuthenticationProvider())
 
     config.prefer(LeafRenderer.self, for: ViewRenderer.self)
 

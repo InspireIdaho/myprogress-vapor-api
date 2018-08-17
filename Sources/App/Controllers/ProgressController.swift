@@ -1,5 +1,6 @@
 import Vapor
 import FluentMySQL
+import Authentication
 
 final class ProgressController: RouteCollection {
     
@@ -8,12 +9,23 @@ final class ProgressController: RouteCollection {
         
         progressRoutes.get(use: index)
         // use helper form of POST
-        progressRoutes.post(Progress.self, use: create)
+        //progressRoutes.post(Progress.self, use: create)
         progressRoutes.get(Progress.parameter, use: find)
         progressRoutes.put(Progress.parameter, use: update)
         progressRoutes.delete(Progress.parameter, use: delete)
         
         progressRoutes.get(Progress.parameter, "creator", use: getCreator)
+        
+        let basicAuthMiddleware =
+            User.basicAuthMiddleware(using: BCryptDigest())
+        // 2
+        let guardAuthMiddleware = User.guardAuthMiddleware()
+        // 3
+        let protected = progressRoutes.grouped(
+            basicAuthMiddleware,
+            guardAuthMiddleware)
+        // 4
+        protected.post(Progress.self, use: create)
     }
     
     func index(_ req: Request) throws -> Future<[Progress]>  {
