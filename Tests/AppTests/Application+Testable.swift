@@ -1,6 +1,7 @@
+@testable import App
 import Vapor
-import App
 import FluentMySQL
+import Authentication
 
 extension Application {
     
@@ -39,13 +40,38 @@ extension Application {
     
     // MARK: request sending helpers
     // 1
-    /// Testing helper to send wrapped Request
+    /// Primary Testing helper to send wrapped Request
     func sendRequest<T>(
         to path: String,
         method: HTTPMethod,
         headers: HTTPHeaders = .init(),
-        body: T? = nil
+        body: T? = nil,
+        loggedInRequest: Bool = false,
+        loggedInUser: User? = nil
         ) throws -> Response where T: Content {
+        
+        var headers = headers
+        if (loggedInRequest || loggedInUser != nil) {
+            let email: String
+            if let user = loggedInUser {
+                email = user.email
+            } else {
+                email = "admin@bv.com"
+            }
+            
+            let credentials = BasicAuthorization(username: email, password: "vapor")
+            var tokenHeaders = HTTPHeaders()
+            tokenHeaders.basicAuthorization = credentials
+            
+            let tokenResponse = try self.sendRequest(
+                to: "/api/user/login",
+                method: .POST,
+                headers: tokenHeaders)
+            
+            let token = try tokenResponse.content.syncDecode(Token.self)
+            headers.add(name: .authorization, value: "Bearer \(token.token)")
+        }
+        
         let responder = try self.make(Responder.self)
         // 2
         let request = HTTPRequest(
@@ -62,10 +88,13 @@ extension Application {
     }
     
     // 5
+    /// allow request with no body/content, just status resp
     func sendRequest(
         to path: String,
         method: HTTPMethod,
-        headers: HTTPHeaders = .init()
+        headers: HTTPHeaders = .init(),
+        loggedInRequest: Bool = false,
+        loggedInUser: User? = nil
         ) throws -> Response {
         // 6
         let emptyContent: EmptyContent? = nil
@@ -74,51 +103,67 @@ extension Application {
             to: path,
             method: method,
             headers: headers,
-            body: emptyContent)
+            body: emptyContent,
+            loggedInRequest: loggedInRequest,
+            loggedInUser: loggedInUser
+        )
     }
     
     // 8
+    /// allow request send with data T in body, just status resp
     func sendRequest<T>(
         to path: String,
         method: HTTPMethod,
         headers: HTTPHeaders,
-        data: T
+        data: T,
+        loggedInRequest: Bool = false,
+        loggedInUser: User? = nil
         ) throws where T: Content {
         // 9
         _ = try self.sendRequest(
             to: path,
             method: method,
             headers: headers,
-            body: data)
+            body: data,
+            loggedInRequest: loggedInRequest,
+            loggedInUser: loggedInUser
+        )
     }
     
     // MARK: response helpers
 
     // 1
-    /// Testing helper to decode Response
+    /// Testing helper to decode Response T after sending data C to server,
     func getResponse<C, T>(
         to path: String,
         method: HTTPMethod = .GET,
         headers: HTTPHeaders = .init(),
         data: C? = nil,
-        decodeTo type: T.Type
+        decodeTo type: T.Type,
+        loggedInRequest: Bool = false,
+        loggedInUser: User? = nil
         ) throws -> T where C: Content, T: Decodable {
         // 2
         let response = try self.sendRequest(
             to: path,
             method: method,
             headers: headers,
-            body: data)
-        // 3
+            body: data,
+            loggedInRequest: loggedInRequest,
+            loggedInUser: loggedInUser
+        )
         return try response.content.decode(type).wait()
     }
     
     // 4
+    /// just decode T returned, no content sent
     func getResponse<T>(
         to path: String,
         method: HTTPMethod = .GET,
         headers: HTTPHeaders = .init(),
-        decodeTo type: T.Type
+        decodeTo type: T.Type,
+        loggedInRequest: Bool = false,
+        loggedInUser: User? = nil
         ) throws -> T where T: Decodable {
         // 5
         let emptyContent: EmptyContent? = nil
@@ -128,7 +173,10 @@ extension Application {
             method: method,
             headers: headers,
             data: emptyContent,
-            decodeTo: type)
+            decodeTo: type,
+            loggedInRequest: loggedInRequest,
+            loggedInUser: loggedInUser
+        )
     }
     
 }

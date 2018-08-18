@@ -22,6 +22,7 @@ final class User: Codable {
         var username: String?
         
         init(id: UUID?, email: String, username: String?) {
+            self.id = id
             self.email = email
             self.username = username
         }

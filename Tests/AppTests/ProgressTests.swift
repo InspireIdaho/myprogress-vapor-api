@@ -26,7 +26,10 @@ final class ProgressTests: XCTestCase {
     
     func testProgressCanBeRetrievedFromAPI() throws {
         
-        let user = try User.create(on: conn)
+        let user = try? User.create(
+            email: "goofy@bv.com",
+            password: "yukyuk",
+            on: conn)
         
         let progress = try Progress.create(
             indexPath: testIndexPath,
@@ -58,7 +61,8 @@ final class ProgressTests: XCTestCase {
             method: .POST,
             headers: ["Content-Type": "application/json"],
             data: progress,
-            decodeTo: App.Progress.self)
+            decodeTo: App.Progress.self,
+            loggedInRequest: true)
 
         XCTAssertEqual(receivedNode.indexPath, testIndexPath)
         XCTAssertEqual(receivedNode.completedOn, testCompletedOn.timeIntervalSinceReferenceDate)

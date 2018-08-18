@@ -3,6 +3,7 @@
 import Vapor
 import XCTest
 import FluentMySQL
+import Crypto
 
 extension User {
     
@@ -13,9 +14,11 @@ extension User {
         username: String? = "mickey",
         on connection: MySQLConnection
         ) throws -> User {
+        
+        let hashedPassword = try BCrypt.hash(password)
         let user = User(
             email: email,
-            password: password,
+            password: hashedPassword,
             username: username)
         return try user.save(on: connection).wait()
     }
