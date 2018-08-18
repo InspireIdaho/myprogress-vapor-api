@@ -51,6 +51,9 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     migrations.add(model: User.self, database: .mysql)
     // must create User first, as Progress FK references
     migrations.add(model: Progress.self, database: .mysql)
+    migrations.add(model: Token.self, database: .mysql)
+    
+    migrations.add(migration: AdminUser.self, database: .mysql)
     services.register(migrations)
 
     /// Configure commands

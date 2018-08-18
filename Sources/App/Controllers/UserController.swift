@@ -8,13 +8,26 @@ final class UserController: RouteCollection {
         let userRoutes = router.grouped("api", "user")
         
         userRoutes.get(use: index)
-        // use helper form of POST
-        userRoutes.post(User.self, use: create)
         userRoutes.get(User.parameter, use: find)
+        
 //        userRoutes.put(Progress.parameter, use: update)
 //        userRoutes.delete(Progress.parameter, use: delete)
         
         userRoutes.get(User.parameter, "progress", use: progressList)
+        
+        let basicAuthMiddleware =
+            User.basicAuthMiddleware(using: BCryptDigest())
+        let basicAuthGroup = userRoutes.grouped(basicAuthMiddleware)
+        basicAuthGroup.post("login", use: login)
+        
+        let tokenAuthMiddleware =
+            User.tokenAuthMiddleware()
+        let guardAuthMiddleware = User.guardAuthMiddleware()
+        let tokenAuthGroup = userRoutes.grouped(
+            tokenAuthMiddleware,
+            guardAuthMiddleware)
+        
+        tokenAuthGroup.post(User.self, use: create)
     }
     
     func index(_ req: Request) throws -> Future<[User.Public]>  {
@@ -37,5 +50,11 @@ final class UserController: RouteCollection {
             .flatMap(to: [Progress].self) { user in
                 return try user.progressList.query(on: req).all()
         }
+    }
+    
+    func login(_ req: Request) throws -> Future<Token> {
+        let user = try req.requireAuthenticated(User.self)
+        let token = try Token.generate(for: user)
+        return token.save(on: req)
     }
 }

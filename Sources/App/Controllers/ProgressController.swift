@@ -11,22 +11,22 @@ final class ProgressController: RouteCollection {
         // use helper form of POST
         //progressRoutes.post(Progress.self, use: create)
         progressRoutes.get(Progress.parameter, use: find)
-        progressRoutes.put(Progress.parameter, use: update)
-        progressRoutes.delete(Progress.parameter, use: delete)
         
         progressRoutes.get(Progress.parameter, "creator", use: getCreator)
         
-        let basicAuthMiddleware =
-            User.basicAuthMiddleware(using: BCryptDigest())
+        let tokenAuthMiddleware =
+            User.tokenAuthMiddleware()
         // 2
         let guardAuthMiddleware = User.guardAuthMiddleware()
         // 3
-        let protected = progressRoutes.grouped(
-            basicAuthMiddleware,
+        let tokenAuthGroup = progressRoutes.grouped(
+            tokenAuthMiddleware,
             guardAuthMiddleware)
         // 4
-        protected.post(Progress.self, use: create)
-    }
+        tokenAuthGroup.post(Progress.ProgressCreateData.self, use: create)
+        tokenAuthGroup.put(Progress.parameter, use: update)
+        tokenAuthGroup.delete(Progress.parameter, use: delete)
+  }
     
     func index(_ req: Request) throws -> Future<[Progress]>  {
         return Progress.query(on: req).all()
@@ -37,7 +37,13 @@ final class ProgressController: RouteCollection {
     }
     
     // use helper form of POST, pre-creates target model instance
-    func create(_ req: Request, progress: Progress) throws -> Future<Progress>  {
+    //func create(_ req: Request, progress: Progress) throws -> Future<Progress>  {
+    func create(_ req: Request, data: Progress.ProgressCreateData) throws -> Future<Progress>
+    {
+        let user = try req.requireAuthenticated(User.self)
+        let progress = try Progress(indexPath: data.indexPath,
+                                    completedOn: data.completedOn,
+                                    creatorID: user.requireID())
         return progress.save(on: req)
     }
     
@@ -45,9 +51,11 @@ final class ProgressController: RouteCollection {
         return try flatMap(
             to: Progress.self,
             req.parameters.next(Progress.self),
-            req.content.decode(Progress.self)) {
+            req.content.decode(Progress.ProgressCreateData.self)) {
                 targetProgress, sourceProgress in
                 targetProgress.patch(from: sourceProgress)
+                let user = try req.requireAuthenticated(User.self)
+                targetProgress.creatorID = try user.requireID()
                 return targetProgress.save(on: req)
         }
     }
@@ -66,4 +74,5 @@ final class ProgressController: RouteCollection {
                 return progress.creator.get(on: req)
         }
     }
+    
 }

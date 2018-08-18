@@ -74,3 +74,23 @@ extension User: BasicAuthenticatable {
     static var passwordKey: PasswordKey = \User.password
 }
 
+extension User: TokenAuthenticatable {
+    typealias TokenType = Token
+}
+
+struct AdminUser: Migration {
+    typealias Database = MySQLDatabase
+    
+    static func prepare(on conn: MySQLConnection) -> EventLoopFuture<Void> {
+        let password = try? BCrypt.hash("vapor")
+        guard let hashedPassword = password else {
+            fatalError("failed to create admin user")
+        }
+        let user = User(email: "admin@bv.com", password: hashedPassword)
+        return user.save(on: conn).transform(to: ())
+    }
+    
+    static func revert(on conn: MySQLConnection) -> EventLoopFuture<Void> {
+        return .done(on: conn)
+    }
+}

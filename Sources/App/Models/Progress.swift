@@ -16,11 +16,14 @@ final class Progress: Codable {
     
     /// convenience method to update properties in this instance from another
     /// keep internal knowledge in one place
-    func patch(from: Progress) {
+    func patch(from: Progress.ProgressCreateData) {
         self.indexPath = from.indexPath
         self.completedOn = from.completedOn
-        // TODO: check both instances have same owner before copying; throw error?
-        self.creatorID = from.creatorID
+    }
+    
+    struct ProgressCreateData: Content {
+        let indexPath: String
+        let completedOn: Double
     }
 }
 
