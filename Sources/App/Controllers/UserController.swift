@@ -7,27 +7,40 @@ final class UserController: RouteCollection {
     func boot(router: Router) throws {
         let userRoutes = router.grouped("api", "user")
         
+        // TODO: routes for testing **remove in production**
+        
+        // GET host/api/user
+        // -> list of all users
         userRoutes.get(use: index)
+        
+        // GET host/api/user/{id}
         userRoutes.get(User.parameter, use: find)
         
-//        userRoutes.put(Progress.parameter, use: update)
-//        userRoutes.delete(Progress.parameter, use: delete)
-        
+        // GET host/api/user/{id}/progress
         userRoutes.get(User.parameter, "progress", use: progressList)
         
-        let basicAuthMiddleware =
-            User.basicAuthMiddleware(using: BCryptDigest())
+        // authenticated via Basic in HTTP Headers
+        let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
         let basicAuthGroup = userRoutes.grouped(basicAuthMiddleware)
+        
+        // POST host/api/user/login
         basicAuthGroup.post("login", use: login)
         
-        let tokenAuthMiddleware =
-            User.tokenAuthMiddleware()
+        // authenticated via Auth token in HTTP Headers
+        let tokenAuthMiddleware = User.tokenAuthMiddleware()
         let guardAuthMiddleware = User.guardAuthMiddleware()
         let tokenAuthGroup = userRoutes.grouped(
             tokenAuthMiddleware,
             guardAuthMiddleware)
         
+        // POST host/api/user (new user json in body)
         tokenAuthGroup.post(User.self, use: create)
+        
+        // GET host/api/user/me
+        tokenAuthGroup.get("me", use: authUserForToken)
+        
+        // GET host/api/user/progress
+        tokenAuthGroup.get("progress", use: authProgressList)
     }
     
     func index(_ req: Request) throws -> Future<[User.Public]>  {
@@ -37,6 +50,12 @@ final class UserController: RouteCollection {
     func find(_ req: Request) throws -> Future<User.Public>  {
         return try req.parameters.next(User.self).convertToPublic()
     }
+    
+    func authUserForToken(_ req: Request) throws -> Future<User.Public>  {
+        let user = try req.requireAuthenticated(User.self)
+        return req.future(user.convertToPublic())
+    }
+
 
     // use helper form of POST, pre-creates target model instance
     func create(_ req: Request, user: User) throws -> Future<User.Public>  {
@@ -52,9 +71,24 @@ final class UserController: RouteCollection {
         }
     }
     
-    func login(_ req: Request) throws -> Future<Token> {
+    func authProgressList(_ req: Request) throws -> Future<[Progress]> {
+        let user = try req.requireAuthenticated(User.self)
+        return try user.progressList.query(on: req).all()
+    }
+
+    
+    func login(_ req: Request) throws -> Future<Response> {
+        
+        // this auth looks for 
         let user = try req.requireAuthenticated(User.self)
         let token = try Token.generate(for: user)
+        // potential race, if token save fails
+        //req.http.headers.add(name: HTTPHeaderName.authorization, value: token.token)
         return token.save(on: req)
+            .flatMap { token in
+                let resp = req.response()
+                resp.http.headers.add(name: HTTPHeaderName.authenticationInfo, value: token.token)
+                return req.future(resp)
+        }
     }
 }

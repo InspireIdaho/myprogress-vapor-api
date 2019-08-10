@@ -7,24 +7,30 @@ final class ProgressController: RouteCollection {
     func boot(router: Router) throws {
         let progressRoutes = router.grouped("api", "progress")
         
+        // GET host/api/progress
         progressRoutes.get(use: index)
         // use helper form of POST
         //progressRoutes.post(Progress.self, use: create)
+        
+        // GET host/api/progress/{id}
         progressRoutes.get(Progress.parameter, use: find)
         
+        // GET host/api/progress/{id}/creator
         progressRoutes.get(Progress.parameter, "creator", use: getCreator)
         
-        let tokenAuthMiddleware =
-            User.tokenAuthMiddleware()
-        // 2
+        let tokenAuthMiddleware = User.tokenAuthMiddleware()
         let guardAuthMiddleware = User.guardAuthMiddleware()
-        // 3
         let tokenAuthGroup = progressRoutes.grouped(
             tokenAuthMiddleware,
             guardAuthMiddleware)
-        // 4
+
+        // POST host/api/progress  (json in body)? or params?
         tokenAuthGroup.post(Progress.ProgressCreateData.self, use: create)
-        tokenAuthGroup.put(Progress.parameter, use: update)
+
+        // PUT host/api/progress/{id}  (json in req body)
+        tokenAuthGroup.patch(Progress.parameter, use: update)
+
+        // DELETE host/api/progress/{id}
         tokenAuthGroup.delete(Progress.parameter, use: delete)
   }
     
