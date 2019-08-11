@@ -38,6 +38,11 @@ extension User {
         return children(\.creatorID)
     }
     
+    /// derived list of groups the user is a member of
+    var groups: Siblings<User, Group, Member> {
+        return siblings()
+    }
+    
     ///
     func convertToPublic() -> User.Public {
         return User.Public(id: id, email: email, username: username)

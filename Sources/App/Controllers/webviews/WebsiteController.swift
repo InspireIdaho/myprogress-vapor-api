@@ -10,14 +10,14 @@ final class WebsiteController: RouteCollection {
     
     func index(_ req: Request) throws -> Future<View>  {
         return Progress.query(on: req)
-        .all()
+            .all()
             .flatMap(to: View.self) { nodes in
                 
                 let nodesData = nodes.isEmpty ? nil : nodes
-        let context = IndexContent(
-            title: "Homepage",
-            progressNodes: nodesData)
-        return try req.view().render("index", context)
+                let context = IndexContent(
+                    title: "Homepage",
+                    progressNodes: nodesData)
+                return try req.view().render("index", context)
         }
     }
     

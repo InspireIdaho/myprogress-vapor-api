@@ -41,6 +41,10 @@ final class UserController: RouteCollection {
         
         // GET host/api/user/progress
         tokenAuthGroup.get("progress", use: authProgressList)
+        
+        // GET host/api/user/groups
+        tokenAuthGroup.get("group", use: authGroupList)
+
     }
     
     func index(_ req: Request) throws -> Future<[User.Public]>  {
@@ -74,6 +78,11 @@ final class UserController: RouteCollection {
     func authProgressList(_ req: Request) throws -> Future<[Progress]> {
         let user = try req.requireAuthenticated(User.self)
         return try user.progressList.query(on: req).all()
+    }
+
+    func authGroupList(_ req: Request) throws -> Future<[Group]> {
+        let user = try req.requireAuthenticated(User.self)
+        return try user.groups.query(on: req).all()
     }
 
     
