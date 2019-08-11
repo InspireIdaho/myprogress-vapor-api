@@ -36,6 +36,9 @@ final class UserController: RouteCollection {
         // POST host/api/user (new user json in body)
         tokenAuthGroup.post(User.self, use: create)
         
+        // POST host/api/user (new user json in body)
+        tokenAuthGroup.post([User].self, use: createBatch)
+
         // GET host/api/user/me
         tokenAuthGroup.get("me", use: authUserForToken)
         
@@ -57,7 +60,8 @@ final class UserController: RouteCollection {
     
     func authUserForToken(_ req: Request) throws -> Future<User.Public>  {
         let user = try req.requireAuthenticated(User.self)
-        return req.future(user.convertToPublic())
+        user.lastActivityDate = Date()
+        return user.save(on: req).convertToPublic()
     }
 
 
@@ -65,6 +69,13 @@ final class UserController: RouteCollection {
     func create(_ req: Request, user: User) throws -> Future<User.Public>  {
         user.password = try BCrypt.hash(user.password)
         return user.save(on: req).convertToPublic()
+    }
+
+    func createBatch(_ req: Request, userList: [User]) throws -> Future<[User.Public]>  {
+        return try userList.map { user in
+            user.password = try BCrypt.hash(user.password)
+            return user.save(on: req).convertToPublic()
+        }.flatten(on: req)
     }
 
     func progressList(_ req: Request) throws -> Future<[Progress]> {
@@ -90,12 +101,13 @@ final class UserController: RouteCollection {
         
         // this auth looks for 
         let user = try req.requireAuthenticated(User.self)
+        user.lastActivityDate = Date()
         let token = try Token.generate(for: user)
-        // potential race, if token save fails
-        //req.http.headers.add(name: HTTPHeaderName.authorization, value: token.token)
-        return token.save(on: req)
-            .flatMap { token in
+        return flatMap(
+            user.save(on: req),
+            token.save(on: req)) { user, token in
                 let resp = req.response()
+                try resp.content.encode(user.convertToPublic())
                 resp.http.headers.add(name: HTTPHeaderName.authenticationInfo, value: token.token)
                 return req.future(resp)
         }

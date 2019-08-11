@@ -32,7 +32,7 @@ final class Member: ModifiablePivot {
         case mentor
     }
     
-    init(_ user: User, _ group: Group, role: Group.Role) throws {
+    init(_ user: User, _ group: Group, _ role: Member.Role) throws {
         userID = try user.requireID()
         groupID = try group.requireID()
         memberRoleEnum = role.rawValue
@@ -44,6 +44,34 @@ final class Member: ModifiablePivot {
         memberRoleEnum = Member.Role.participant.rawValue
     }
 
+    struct AttachUserToGroup: Content {
+        let userID: User.ID
+        let groupID: Group.ID
+        let role: Int?
+    }
+
+    static func attach(member: AttachUserToGroup,
+        on conn: DatabaseConnectable) throws -> Future<Member> {
+        
+        var role = Member.Role.participant
+        if let roleID = member.role {
+            if let possRole = Member.Role.init(rawValue: roleID) {
+                role = possRole
+            }
+        }
+
+        return flatMap(to: Member.self,
+                       User.find(member.userID, on: conn),
+                       Group.find(member.groupID, on: conn)) { user, group in
+                        guard let user = user else {
+                            throw HelpfulError(identifier: "Invalid Membership", reason: "User with ID[\(member.userID)] not found")
+                        }
+                        guard let group = group else {
+                            throw HelpfulError(identifier: "Invalid Membership", reason: "Group with ID[\(member.groupID)] not found")
+                        }
+                        return try Member(user, group, role).save(on: conn)
+        }
+    }
 }
 
 

@@ -8,6 +8,7 @@ final class User: Codable {
     var email: String
     var password: String
     var username: String?
+    var lastActivityDate: Date?
     
     init(email: String, password: String, username: String? = nil) {
         self.email = email
@@ -20,11 +21,13 @@ final class User: Codable {
         var id: UUID?
         var email: String
         var username: String?
+        var lastAction: Date?
         
-        init(id: UUID?, email: String, username: String?) {
-            self.id = id
-            self.email = email
-            self.username = username
+        init(user: User) {
+            self.id = user.id
+            self.email = user.email
+            self.username = user.username
+            self.lastAction = user.lastActivityDate
         }
 
     }
@@ -45,7 +48,7 @@ extension User {
     
     ///
     func convertToPublic() -> User.Public {
-        return User.Public(id: id, email: email, username: username)
+        return User.Public(user: self)
     }
 }
 

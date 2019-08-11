@@ -46,7 +46,7 @@ final class Group: Codable {
     final class Public: Codable {
         var id: UUID?
         var name: String
-        //var slackChannelName: String
+        var slackChannelName: String
         var location: String
         var groupRoleEnum: Int
         var owner: User.ID
@@ -55,6 +55,7 @@ final class Group: Codable {
             self.id = group.id
             self.name = group.name
             self.location = group.location
+            self.slackChannelName = group.slackChannelName
             self.groupRoleEnum = group.groupRole.rawValue
             self.owner = group.owner
         }

@@ -28,11 +28,13 @@ extension Token: Migration {
 extension Token: Content {}
 
 extension Token {
-    // 1
+    
     static func generate(for user: User) throws -> Token {
-        // 2
+        
+        // TODO: invalidate or delete prior tokens for user
+        
         let random = try CryptoRandom().generateData(count: 16)
-        // 3
+        
         return try Token(
             token: random.base64EncodedString(),
             userID: user.requireID())

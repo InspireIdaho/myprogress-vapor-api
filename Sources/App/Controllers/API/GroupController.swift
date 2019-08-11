@@ -27,8 +27,11 @@ final class GroupController: RouteCollection {
             tokenAuthMiddleware,
             guardAuthMiddleware)
 
-        // POST host/api/group  (json in body)? or params?
+        // POST host/api/group  (json in body)
         tokenAuthGroup.post(Group.GroupCreateData.self, use: create)
+
+        // POST host/api/group  (array of json in body)
+        tokenAuthGroup.post([Group.GroupCreateData].self, use: createBatch)
 
         // POST host/api/group/:group_id/add/:user_id
         tokenAuthGroup.post(Group.parameter, "add", User.parameter, use: addMember)
@@ -64,6 +67,14 @@ final class GroupController: RouteCollection {
         let user = try req.requireAuthenticated(User.self)
         let group = try Group(data: data, owner: user.requireID())
         return group.save(on: req)
+    }
+
+    func createBatch(_ req: Request, data: [Group.GroupCreateData]) throws -> Future<[Group]>
+    {
+        let user = try req.requireAuthenticated(User.self)
+        return try data.map { groupData in
+            return try Group(data: groupData, owner: user.requireID()).save(on: req)
+        }.flatten(on: req)
     }
 
     

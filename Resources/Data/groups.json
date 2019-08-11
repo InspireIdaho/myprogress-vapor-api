@@ -1,0 +1,24 @@
+[
+    {
+        "name": "CDA Main",
+        "location": "Coeur d'Alene, ID",
+        "slackChannelName": "#local-cda"
+    },
+    {
+        "name": "Bonners Ferry",
+        "location": "Bonners Ferry, ID",
+        "slackChannelName": "#local-bonners-ferry"
+    },
+    {
+        "name": "Observation Team",
+        "location": "Virtual",
+        "slackChannelName": "#expert-roundtable",
+        "groupRoleEnum": 1
+    },
+    {
+        "name": "Admin",
+        "location": "U of I",
+        "slackChannelName": "#admin",
+        "groupRoleEnum": 2
+    }
+]
