@@ -1,11 +1,6 @@
-
-<style>
-div.black { background-color: #606060 }
-</style>
-
 <div class = "black">
 <p align="center" >
-    <img src="https://www.inspireidaho.com/wp-content/uploads/2018/01/InspireIdaho-Home-1280.png" width="480" alt="InspireIdaho">
+    <img src="https://user-images.githubusercontent.com/9576678/62970080-81796600-bdc3-11e9-8814-3e0cb806bb1e.png" width="480" alt="InspireIdaho">
 </div>
 
 <p align="center">
